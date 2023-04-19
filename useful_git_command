@@ -15,7 +15,7 @@ git checkout <some branch>
 
 git merge <branch>  # 合并到指定分支
 
-git remote -V  # 查看远程版本库信息
+git remote -v  # 查看远程版本库信息
 git fetch <remote>  # 从远程库获取代码
 
 git pull   # 下载代码及快速合并
