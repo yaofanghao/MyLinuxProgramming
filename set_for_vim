@@ -1,0 +1,81 @@
+cp /etc/vimrc ~/.vimrc  # 修改家目录下的vim配置文件
+vim ~/.vimrc
+
+# 部分配置方案，在vimrc中可选择输入以下内容
+syntax on  # 语法高亮
+set completeopt=preview,menu  # 代码补全
+set nobackup #覆盖文件时不备份
+set autowrite # 自动保存
+set tabstop=4 # 设置tab长度
+set noexpandtab  # 不要用空格代替制表符
+set number # 设置行号
+
+# 安装vim插件管理器
+sudo apt-get install git
+git --version
+git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim
+
+# 随后在vimrc中补充以下内容
+set nocompatible              " be iMproved, required
+filetype off                  " required
+ 
+" set the runtime path to include Vundle and initialize
+set rtp+=~/.vim/bundle/Vundle.vim
+call vundle#begin()
+" alternatively, pass a path where Vundle should install plugins
+"call vundle#begin('~/some/path/here')
+" let Vundle manage Vundle, required
+Plugin 'VundleVim/Vundle.vim'
+ 
+" The following are examples of different formats supported.
+" Keep Plugin commands between vundle#begin/end.
+" plugin on GitHub repo
+Plugin 'tpope/vim-fugitive'
+" plugin from http://vim-scripts.org/vim/scripts.html
+" Plugin 'L9'
+" Git plugin not hosted on GitHub
+Plugin 'git://git.wincent.com/command-t.git'
+" git repos on your local machine (i.e. when working on your own plugin)
+" The sparkup vim script is in a subdirectory of this repo called vim.
+" Pass the path to set the runtimepath properly.
+Plugin 'rstacruz/sparkup', {'rtp': 'vim/'}
+" Install L9 and avoid a Naming conflict if you've already installed a
+" different version somewhere else.
+" Plugin 'ascenator/L9', {'name': 'newL9'}
+ 
+" All of your Plugins must be added before the following line
+call vundle#end()            " required
+filetype plugin indent on    " required
+" To ignore plugin indent changes, instead use:
+"filetype plugin on
+"
+" Brief help
+" :PluginList       - lists configured plugins
+" :PluginInstall    - installs plugins; append `!` to update or just :PluginUpdate
+" :PluginSearch foo - searches for foo; append `!` to refresh local cache
+" :PluginClean      - confirms removal of unused plugins; append `!` to auto-approve removal
+"
+" see :h vundle for more details or wiki for FAQ
+" Put your non-Plugin stuff after this line
+
+# 在vimrc中补充以下内容，安装自动补全插件
+set nocompatible              " 这是必需的 
+filetype off                  " 这是必需的 
+ 
+" 在此设置运行时路径 
+set rtp+=~/.vim/bundle/Vundle.vim
+ 
+" vundle初始化 
+call vundle#begin()
+ 
+" 让 Vundle 管理 Vundle, 这是必须的
+Plugin 'VundleVim/Vundle.vim'
+ 
+" 自动补全插件
+Plugin 'Valloric/YouCompleteMe'
+
+"每个插件都应该在这一行之前  
+call vundle#end()            " 这是必需的 
+filetype plugin indent on    " 这是必需的
+
+# :wq退出vimrc，再打开vimrc 输入 :PluginInstall ，显示done， 则成功
