@@ -1,9 +1,9 @@
 git clone
 
-git status  # 查看状态
+git status -s # 查看各文件状态
 git diff  # 查看变更内容
-git add .  #跟踪全部改动过的文件
-git add <filename>   #
+git add .  #添加当前目录下的所有文件到暂存区
+git add <filename/dir>   #添加指定文件/目录到暂存区
 git rm --cached <filename>   #停止跟踪文件但不删除
 
 git commit -m "commit message"  # 提交更新过的文件

@@ -1,0 +1,163 @@
+// {
+//     "window.zoomLevel": 2,
+//     "git.autofetch": true,
+//     "explorer.confirmDelete": false,
+//     "security.workspace.trust.untrustedFiles": "open",
+//     "vsicons.dontShowNewVersionMessage": true,
+//     "bracket-pair-colorizer-2.depreciation-notice": false,
+//     "editor.fontSize": 13,
+//     "code-runner.runInTerminal": true,
+//     "cmake.configureOnOpen": true,
+//     "files.autoGuessEncoding": true,
+//     "terminal.integrated.automationProfile.windows": {
+//     },
+//     "cmake.cmakePath": "E:\\CMake\\bin\\cmake.exe",
+//     "c-cpp-compile-run.run-in-external-terminal": true,
+//     "diffEditor.ignoreTrimWhitespace": false,
+//     "[python]": {
+    
+//         "editor.wordBasedSuggestions": false
+//     },
+//     "explorer.confirmDragAndDrop": false,
+//     "workbench.colorTheme": "One Dark Modern",
+//     "vscode-office.openOutline": false
+// }
+
+{
+    "latex-workshop.latex.autoBuild.run": "never",
+    "latex-workshop.showContextMenu": true,
+    "latex-workshop.intellisense.package.enabled": true,
+    "latex-workshop.message.error.show": false,
+    "latex-workshop.message.warning.show": false,
+    "latex-workshop.latex.tools": [
+        {
+            "name": "xelatex",
+            "command": "xelatex",
+            "args": [
+                "-synctex=1",
+                "-interaction=nonstopmode",
+                "-file-line-error",
+                "%DOCFILE%"
+            ]
+        },
+        {
+            "name": "pdflatex",
+            "command": "pdflatex",
+            "args": [
+                "-synctex=1",
+                "-interaction=nonstopmode",
+                "-file-line-error",
+                "%DOCFILE%"
+            ]
+        },
+        {
+            "name": "latexmk",
+            "command": "latexmk",
+            "args": [
+                "-synctex=1",
+                "-interaction=nonstopmode",
+                "-file-line-error",
+                "-pdf",
+                "-outdir=%OUTDIR%",
+                "%DOCFILE%"
+            ]
+        },
+        {
+            "name": "bibtex",
+            "command": "bibtex",
+            "args": [
+                "%DOCFILE%"
+            ]
+        }
+    ],
+    "latex-workshop.latex.recipes": [
+        {
+            "name": "XeLaTeX",
+            "tools": [
+                "xelatex"
+            ]
+        },
+        {
+            "name": "PDFLaTeX",
+            "tools": [
+                "pdflatex"
+            ]
+        },
+        {
+            "name": "BibTeX",
+            "tools": [
+                "bibtex"
+            ]
+        },
+        {
+            "name": "LaTeXmk",
+            "tools": [
+                "latexmk"
+            ]
+        },
+        {
+            "name": "xelatex -> bibtex -> xelatex*2",
+            "tools": [
+                "xelatex",
+                "bibtex",
+                "xelatex",
+                "xelatex"
+            ]
+        },
+        {
+            "name": "pdflatex -> bibtex -> pdflatex*2",
+            "tools": [
+                "pdflatex",
+                "bibtex",
+                "pdflatex",
+                "pdflatex"
+            ]
+        },
+    ],
+    "latex-workshop.latex.clean.fileTypes": [
+        "*.aux",
+        "*.bbl",
+        "*.blg",
+        "*.idx",
+        "*.ind",
+        "*.lof",
+        "*.lot",
+        "*.out",
+        "*.toc",
+        "*.acn",
+        "*.acr",
+        "*.alg",
+        "*.glg",
+        "*.glo",
+        "*.gls",
+        "*.ist",
+        "*.fls",
+        "*.log",
+        "*.fdb_latexmk"
+    ],
+    "latex-workshop.latex.autoClean.run": "onFailed",
+    "latex-workshop.latex.recipe.default": "lastUsed",
+    "latex-workshop.view.pdf.internal.synctex.keybinding": "double-click",
+    "editor.fontLigatures": false,
+    "bracket-pair-colorizer-2.depreciation-notice": false,
+    "explorer.confirmDelete": false,
+    "vscode-office.openOutline": true,
+    "workbench.editor.enablePreview": false,
+    "explorer.confirmDragAndDrop": false,
+    "[python]": {
+        "editor.formatOnType": true
+    },
+    "code-runner.runInTerminal": true,
+    "fileheader.Author": "yao fanghao",
+    "fileheader.LastModifiedBy": "yao fanghao",
+    "workbench.colorTheme": "One Dark Modern",
+    "terminal.integrated.defaultProfile.windows": "Command Prompt",
+    "fileheader.tpl": "/* * @Date: {createTime}  * @Last Modified time: {updateTime}  */",
+// 头部注释
+    "fileheader.customMade": {
+        "Author": "yao fanghao",
+        "Date": "Do not edit", // 设置后默认设置文件生成时间
+        "LastEditTime": "Do not edit", // 设置后，保存文件更改默认更新最后编辑时间
+        "LastEditors": "yao fanghao", // 设置后，保存文件更改默认更新最后编辑人
+    },
+}
