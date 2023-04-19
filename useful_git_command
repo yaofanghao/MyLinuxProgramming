@@ -1,0 +1,25 @@
+git clone
+
+git status  # 查看状态
+git diff  # 查看变更内容
+git add .  #跟踪全部改动过的文件
+git add <filename>   #
+git rm --cached <filename>   #停止跟踪文件但不删除
+
+git commit -m "commit message"  # 提交更新过的文件
+
+git log
+
+git branch  # 显示所有本地分支
+git checkout <some branch>
+
+git merge <branch>  # 合并到指定分支
+
+git remote -V  # 查看远程版本库信息
+git fetch <remote>  # 从远程库获取代码
+
+git pull   # 下载代码及快速合并
+git push  # 上传代码及快速合并
+
+
+
