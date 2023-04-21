@@ -1,3 +1,9 @@
+/*
+ * @Author: yao fanghao
+ * @Date: 2023-04-19 20:01:31
+ * @LastEditTime: 2023-04-21 11:38:41
+ * @LastEditors: yao fanghao
+ */
 # ----------- preprocess, change source list
 
 cd /etc/apt/

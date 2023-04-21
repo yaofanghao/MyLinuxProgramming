@@ -1,3 +1,9 @@
+/*
+ * @Author: yao fanghao
+ * @Date: 2023-04-20 22:05:25
+ * @LastEditTime: 2023-04-21 11:39:27
+ * @LastEditors: yao fanghao
+ */
 cp /etc/vim/vimrc ~/.vimrc  # 修改家目录下的vim配置文件
 vim ~/.vimrc
 

@@ -1,7 +1,7 @@
 /*
  * @Author: yao fanghao
  * @Date: 2023-04-21 10:44:31
- * @LastEditTime: 2023-04-21 14:48:48
+ * @LastEditTime: 2023-04-21 15:47:36
  * @LastEditors: yao fanghao
  */
 #include <stdio.h>
@@ -43,6 +43,10 @@ int main(int argc, char **argv)
         exit(1);
     }
 
+    // 指向文件末尾，并读取文件长度，比自己count++方便很多
+    fseek(fps, 0, SEEK_END);
+    printf("length of file is %ld \n", ftell(fps));
+
     fpd = fopen(argv[2],"w");  // 如果不输入 argv[2] ，程序会输出：[fopen(): Bad address]
     if (fpd == NULL)
     {
@@ -54,7 +58,7 @@ int main(int argc, char **argv)
     printf("success open %s", argv[1]);
     
     // 方法1
-    // 每次读一个字符并写入    
+    // 按字符并写入    
     // while(1)
     // {
         // ch = fgetc(fps);
@@ -67,7 +71,7 @@ int main(int argc, char **argv)
     // }
     
     // 方法2
-    // 每次读SIZE个大小的字符串并写入
+    // 按符串并写入
     while(fgets(buf, BUFSIZE, fps) != NULL)
     {
         fputs(buf, fpd);
