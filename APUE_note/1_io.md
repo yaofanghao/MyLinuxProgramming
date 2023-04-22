@@ -141,6 +141,9 @@ int main(int argc, char **argv)
 * ```open();```
   * 常用的flags：
     * ```O_RDONLY、O_WRONLY、O_CREAT、O_TRUNC、O_APPEND、O_RDWR、O_CREAT、O_TRUNC``` ......
+* ```create(fp);``` 
+    * 等同于 ```open(fp, O_WRONLY | O_CREAT | O_TRUNC, 0600);```
+
 * ```close();```
 
 * ```read();```
