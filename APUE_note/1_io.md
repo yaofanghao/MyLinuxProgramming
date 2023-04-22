@@ -1,7 +1,7 @@
 <!--
  * @Author: yao fanghao
  * @Date: 2023-04-20 22:20:30
- * @LastEditTime: 2023-04-21 22:04:11
+ * @LastEditTime: 2023-04-22 11:17:22
  * @LastEditors: yao fanghao
 -->
 # 文件I/O 基础知识
@@ -16,14 +16,14 @@
 
 * UNP 5.1
 * APUE 3.11
-* 李慧琴网课 P136
+* 李慧琴网课 P139
 
 # 简要记录
 
 * io操作非常重要且常用，一切皆文件
 * **需用到时多查man手册**
 
-## 系统I/O 参考代码-- 1_1_sysio.c
+## 标准I/O 参考代码-- 1_1_stdio.c
 
 * 通常都需要包含的头文件:
 
@@ -124,17 +124,47 @@ int main(int argc, char **argv)
 
 * 使用```malloc```要包含stdlib头文件，否则会报警告或产生可怕的错误
   
-* ```ulimit -a ``` 命令
+* ```ulimit -a``` 命令
   * 一个进程能打开的文件个数最多为1024个
 
 * 临时文件
-  * 如何不冲突、及时销毁
+  * 如何不冲突、及时销毁cc g
   * ```tmpnam```
   * ```tmpfile```
 
-## 标准I/O 参考代码-- 1_2_stdio.c
+## 文件I/O 参考代码-- 1_2_sysio.c
 
-* 文件描述符 fd
+* 文件描述符 fd--file descriptor
   * 整型数
   * 存在于某个进程空间中
-  * 
+
+* ```open();```
+  * 常用的flags：
+    * ```O_RDONLY、O_WRONLY、O_CREAT、O_TRUNC、O_APPEND、O_RDWR、O_CREAT、O_TRUNC``` ......
+* ```close();```
+
+* ```read();```
+* ```write();```
+* ```close();```
+  
+* 通常都需要包含的头文件:
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+int main(int argc, char **argv)
+{
+    // ....
+    exit(0);  // 0 正常退出，1异常退出
+}
+```
+
+## 
+
