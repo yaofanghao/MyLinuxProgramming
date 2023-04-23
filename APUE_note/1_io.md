@@ -1,7 +1,7 @@
 <!--
  * @Author: yao fanghao
  * @Date: 2023-04-20 22:20:30
- * @LastEditTime: 2023-04-22 11:17:22
+ * @LastEditTime: 2023-04-22 11:54:28
  * @LastEditors: yao fanghao
 -->
 # 文件I/O 基础知识
@@ -16,7 +16,7 @@
 
 * UNP 5.1
 * APUE 3.11
-* 李慧琴网课 P139
+* 李慧琴网课 P140
 
 # 简要记录
 
@@ -169,5 +169,9 @@ int main(int argc, char **argv)
 }
 ```
 
-## 
+## 文件共享
+
+## 原子操作
+
+* 
 

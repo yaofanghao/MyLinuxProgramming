@@ -1,7 +1,7 @@
 /*
  * @Author: yao fanghao
  * @Date: 2023-04-21 21:11:11
- * @LastEditTime: 2023-04-22 10:59:05
+ * @LastEditTime: 2023-04-22 11:31:08
  * @LastEditors: yao fanghao
  */
 #include <stdio.h>
@@ -17,7 +17,7 @@
 #define BUFSIZE 1024
 
 // 实现功能：
-//     将fps文件中的内容复制到fpd中
+//     将sfd文件中的内容复制到dfd中
 int main(int argc, char **argv)
 {
     if(argc<3)
@@ -29,7 +29,7 @@ int main(int argc, char **argv)
     int sfd, dfd;
     char buf[BUFSIZE];
     int len, ret;
-	int pos; 
+	int pos; // 设置当前读取位置position
 
     sfd = open(argv[1], O_RDONLY);
     if(sfd < 0)
@@ -62,7 +62,7 @@ int main(int argc, char **argv)
         }
         
 		pos = 0;
-		while(1)
+		while(len > 0)
 		{
 			ret = write(dfd, buf+pos, len);
 			if(ret < 0)
@@ -72,11 +72,10 @@ int main(int argc, char **argv)
 			}
 			pos += ret;
 			len -= ret;
-		}		
-        if(ret == 0)
-        {
-            break;   
-        }
+            printf("ret = %d \n", ret);
+            printf("pos = %d \n", pos);
+            printf("len = %d \n", len);
+		}	
     }
 
     // 首先关闭目的文件，再关闭源文件
