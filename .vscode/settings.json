@@ -160,4 +160,8 @@
         "LastEditTime": "Do not edit", // 设置后，保存文件更改默认更新最后编辑时间
         "LastEditors": "yao fanghao", // 设置后，保存文件更改默认更新最后编辑人
     },
+    "files.associations": {
+        "types.h": "c",
+        "stat.h": "c"
+    },
 }
