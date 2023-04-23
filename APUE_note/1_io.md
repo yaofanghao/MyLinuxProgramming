@@ -1,7 +1,7 @@
 <!--
  * @Author: yao fanghao
  * @Date: 2023-04-20 22:20:30
- * @LastEditTime: 2023-04-22 11:54:28
+ * @LastEditTime: 2023-04-23 14:27:24
  * @LastEditors: yao fanghao
 -->
 # 文件I/O 基础知识
@@ -16,7 +16,7 @@
 
 * UNP 5.1
 * APUE 3.11
-* 李慧琴网课 P140
+* 李慧琴网课 p124-141 ok
 
 # 简要记录
 
@@ -141,8 +141,8 @@ int main(int argc, char **argv)
 * ```open();```
   * 常用的flags：
     * ```O_RDONLY、O_WRONLY、O_CREAT、O_TRUNC、O_APPEND、O_RDWR、O_CREAT、O_TRUNC``` ......
-* ```create(fp);``` 
-    * 等同于 ```open(fp, O_WRONLY | O_CREAT | O_TRUNC, 0600);```
+* ```create(fp);```
+  * 等同于 ```open(fp, O_WRONLY | O_CREAT | O_TRUNC, 0600);```
 
 * ```close();```
 
@@ -169,9 +169,19 @@ int main(int argc, char **argv)
 }
 ```
 
-## 文件共享
+## 文件共享 *了解即可*
 
-## 原子操作
+## 原子操作 参考代码-- 1_3_dup.c
 
-* 
+* 用于多进程/多线程并发
+* 解决竞争和冲突
 
+* ```dup();```
+* ```dup2();```
+
+## 同步 *了解即可*
+
+* ```fcntl();```
+* ```ioctl();``` 控制设备相关
+* ```sync();```
+* ```fdatasync();```
