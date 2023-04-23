@@ -1,15 +1,19 @@
 /*
  * @Author: yao fanghao
  * @Date: 2023-04-19 21:29:25
- * @LastEditTime: 2023-04-21 11:39:40
+ * @LastEditTime: 2023-04-22 11:21:27
  * @LastEditors: yao fanghao
  */
 git clone
 
 git status -s # 查看各文件状态
 git diff  # 查看变更内容
-git add .  #添加当前目录下的所有文件到暂存区
+
 git add <filename/dir>   #添加指定文件/目录到暂存区
+git add -A  # 提交所有变化
+git add -u  # 提交被修改(modified)和被删除(deleted)文件，不包括新文件(new)
+git add .  # 提交新文件(new)和被修改(modified)文件，不包括被删除(deleted)文件
+
 git rm --cached <filename>   #停止跟踪文件但不删除
 
 git commit -m "commit message"  # 提交更新过的文件
