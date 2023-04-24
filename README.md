@@ -5,7 +5,7 @@
  * @LastEditors: yao fanghao
 -->
 
-# 学习记录 / UNP / APUE
+# 学习记录 / 系统编程 / APUE / UNP 
 
 # tools
 
@@ -24,6 +24,7 @@
 * **linux/unix系统编程手册**
 * [https://man7.org/tlpi/](https://man7.org/tlpi/)
 * **UNIX 环境高级编程**
+* **UNIX网络编程**
 * Linux是怎样工作的-武内觉 √
 * 操作系统导论 √
 * 嵌入式软件开发笔试面试指南
