@@ -1,6 +1,12 @@
 /*
  * @Author: yao fanghao
  * @Date: 2023-04-23 15:35:24
+ * @LastEditTime: 2023-04-24 21:36:30
+ * @LastEditors: yao fanghao
+ */
+/*
+ * @Author: yao fanghao
+ * @Date: 2023-04-23 15:35:24
  * @LastEditTime: 2023-04-23 16:07:05
  * @LastEditors: yao fanghao
  */
@@ -26,7 +32,7 @@ static int flen(char *fname)
 
 // 模拟ls命令 读取文件类型
 static int ftype(char *fname)
-{
+{   
     struct stat statres;
     if(stat(fname, &statres) < 0)
     {
