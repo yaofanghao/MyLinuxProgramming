@@ -1,7 +1,7 @@
 <!--
  * @Author: yao fanghao
  * @Date: 2023-04-23 14:57:19
- * @LastEditTime: 2023-04-24 22:22:35
+ * @LastEditTime: 2023-04-27 22:17:24
  * @LastEditors: yao fanghao
 -->
 # 文件系统 基础知识
@@ -11,17 +11,17 @@
 * 系统编程 第4、5章 文件I/O
 * **APUE 第3-6章** 文件I/O、文件和目录、标准I/O库、系统数据文件和信息
 * CSAPP 辅助参考学习
-* 李慧琴网课 p142-166
+* 李慧琴网课 p142-158
 
 # 学习进度
 
 * 系统编程 第4、5章 文件I/O ok
-* APUE 5.1
-* 李慧琴网课 p151-
+* APUE 第3-6章 ok
+* 李慧琴网课 p142-158 ok
 
 # 简要记录
 
-## 目录和文件 参考代码-- 2_1_stat.c 2_2_glob.c 2_3_readdir.c
+## 目录和文件 参考代码-- 2_1_stat.c 2_2_glob.c 2_3_readdir.c 2_4_du.c
 
 * 获取文件属性
   * ls -l
@@ -45,7 +45,7 @@
     time_t     st_atime;     //文件最后被访问的时间
     time_t     st_mtime;     //文件内容最后被修改的时间
     time_t     st_ctime;     //文件状态改变时间
-    blksize_t st_blksize;    //文件内容对应的块大小
+    blksize_t  st_blksize;    //文件内容对应的块大小
     blkcnt_t   st_blocks;    //伟建内容对应的块数量
   };
   ```
@@ -94,3 +94,7 @@
     char           d_name[256]; /* filename 文件名 */
   `};
   ````
+
+  * ```du``` 命令
+
+## 时间函数

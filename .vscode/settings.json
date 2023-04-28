@@ -163,6 +163,7 @@
     "files.associations": {
         "types.h": "c",
         "stat.h": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "compare": "c"
     },
 }
