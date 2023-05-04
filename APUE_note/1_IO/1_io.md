@@ -23,7 +23,9 @@
 * io操作非常重要且常用，一切皆文件
 * **需用到时多查man手册**
 
-## 标准I/O 参考代码-- 1_1_stdio.c
+## 标准I/O 
+
+参考代码-- 1_1_stdio.c
 
 * 通常都需要包含的头文件:
 
@@ -132,7 +134,9 @@ int main(int argc, char **argv)
   * ```tmpnam```
   * ```tmpfile```
 
-## 文件I/O 参考代码-- 1_2_sysio.c
+## 文件I/O 
+
+参考代码-- 1_2_sysio.c
 
 * 文件描述符 fd--file descriptor
   * 整型数
@@ -171,7 +175,9 @@ int main(int argc, char **argv)
 
 ## 文件共享 *了解即可*
 
-## 原子操作 参考代码-- 1_3_dup.c
+## 原子操作 
+
+参考代码-- 1_3_dup.c
 
 * 用于多进程/多线程并发
 * 解决竞争和冲突
