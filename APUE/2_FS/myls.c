@@ -1,9 +1,3 @@
-/*
- * @Author: yao fanghao
- * @Date: 2023-04-24 21:36:15
- * @LastEditTime: 2023-04-24 21:51:49
- * @LastEditors: yao fanghao
- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -13,16 +7,11 @@
 #include <string.h>
 #include <dirent.h>
 
-#define FMTSTRSIZE 1024
+#include "myls.h"
 
 #define PAT "/etc/a*.conf"
 
 static struct stat statres;
-
-typedef struct {
-    char filetype;
-    long long filesize;
-} fileAttr;
 
 //文件大小
 static off_t flen(const char *fname){
@@ -157,3 +146,4 @@ int main(int argc,char **argv)
 
     exit(0);
 }
+

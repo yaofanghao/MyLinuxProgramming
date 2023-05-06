@@ -1,9 +1,3 @@
-/*
- * @Author: yao fanghao
- * @Date: 2023-05-03 15:51:44
- * @LastEditTime: 2023-05-03 15:52:20
- * @LastEditors: yao fanghao
- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <setjmp.h>
@@ -46,3 +40,4 @@ int main()
     a();
     return 0;
 }
+

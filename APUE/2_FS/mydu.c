@@ -1,9 +1,3 @@
-/*
- * @Author: yao fanghao
- * @Date: 2023-04-27 21:37:09
- * @LastEditTime: 2023-05-03 15:53:57
- * @LastEditors: yao fanghao
- */
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,7 +22,6 @@ static int path_noloop(const char *path) {
     return 1;
 }
 
-// 模拟du命令 递归读取文件目录
 static int64_t mydu(const char *path) {
     static struct stat statres;
     static char nextpath[PATHSIZE];
@@ -83,3 +76,4 @@ int main(int argc,char **argv)
 
     return 0;
 }
+
