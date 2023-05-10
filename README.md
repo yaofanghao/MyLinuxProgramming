@@ -13,8 +13,8 @@
 * gcc / g++ / gdb
 * vim
 * vscode
-* make / cmake
-* markdown
+* Make / CMake
+* Markdown
 
 # 参考资料
 
@@ -23,10 +23,12 @@
 * **CSAPP**
 * **linux/unix系统编程手册**
 * [https://man7.org/tlpi/](https://man7.org/tlpi/)
-* **UNIX 环境高级编程**
+* **UNIX环境高级编程**
 * **UNIX网络编程**
-* Linux是怎样工作的-武内觉 √
+* **计算机网络-自顶向下方法**
+* 计算机网络-谢希仁
 * 操作系统导论 √
+* Linux是怎样工作的-武内觉 √
 * 嵌入式软件开发笔试面试指南
 * [史上最强最细腻的linux嵌入式C语言学习教程【李慧芹老师】】](https://www.bilibili.com/video/BV18p4y167Md/?share_source=copy_web&vd_source=85816208bdca2a40c310bef0b0d541b4)
 * [黑马程序员-Linux网络编程】](https://www.bilibili.com/video/BV1iJ411S7UA/?share_source=copy_web&vd_source=85816208bdca2a40c310bef0b0d541b4)

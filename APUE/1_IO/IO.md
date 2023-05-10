@@ -1,12 +1,17 @@
 # I/O
+
 一切实现的基础
+
 ## stdio
+
 ### 打开关闭
+
 - fopen()
-    - open(linux)
-    - openfile(win)
+  - open(linux)
+  - openfile(win)
 - fclose()
-~~~ c
+
+```c
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -41,27 +46,31 @@ int main()
     return 0;
 }
 
-~~~
+```
+
 **如果一个系统函数有打开和其对应的关闭操作，那么函数的返回值是放在 堆 上的（malloc 与free），否则有可能在堆上也有可能在静态区**
 
-~~~ bash
+```bash
 /usr/include/asm-generic/errno-base.h
 /usr/include/asm-generic/errno.h
-~~~
+```
 
-~~~c
+```c
 #include <errno.h>
 perror("fopen()",errno);
 #include <string.h>
 strerror(errno);
-~~~
+```
+
 - 默认最多打开的文件描述符个数
-~~~bash
+
+```bash
 $ ulimit -a
 
 -n: file descriptors                1024
-~~~
-~~~ c
+```
+
+```c
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -85,17 +94,23 @@ int main()
     return 0;
 }
 
-~~~
+```
+
 #### 新文件权限产生
+
 **mod = 0666 & ~umask**
-修改方式 
-~~~ bash
+修改方式
+
+```bash
 umask 022
-~~~
+```
+
 ### 读写
+
 - fgetc()
 - fputc()
-~~~ c
+
+```c
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -129,11 +144,13 @@ int main(int argc,char **argv)
     return 0;
 }
 
-~~~
+```
+
 - fgets()
 - fputs()
-cp 的fgets/fputs版本
-~~~ c
+  cp 的fgets/fputs版本
+
+```c
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -165,14 +182,17 @@ int main()
     fclose(fpd);
     return 0;
 }
-~~~
+```
+
 **fgets遇到 size-1 or '\n'停止**
-~~~ base
+
+```base
 abcd
 1-> a b c d '\0'
 2-> '\n' '0'
-~~~
-~~~ c
+```
+
+```c
 #define SIZE 5
 int main()
 {
@@ -190,11 +210,13 @@ int main()
     }
     return 0;
 }
-~~~
+```
+
 - fread()
 - fwrite()
-cp的fread/fwrite版本
-~~~ c
+  cp的fread/fwrite版本
+
+```c
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -232,11 +254,14 @@ int main()
     fclose(fpd);
     return 0;
 }
-~~~
+```
+
 ### 打印与输入
+
 - printf()
 - scanf()
-~~~ c
+
+```c
 #include <stdio.h>
 /*****************
  *sprintf atoi fprintf
@@ -252,20 +277,26 @@ int main()
     printf("%s",buf);
     return 0;
 }
-~~~
+```
+
 ### 文件指针
+
 #### 何谓“文件指针”？
+
 就像读书时眼睛移动一样，文件指针逐行移动
+
 #### 什么时候用？
+
 对一个文件先读后写的时候，比如：
-~~~ c
+
+```c
 FILE *fp = fopen();
 fputc(fp);
 
 fgetc();//无法得到刚刚写入的东西
-~~~
+```
 
-~~~ c
+```c
 
 int fseek(FILE *stream,long offset,int whence);
 //设置文件指针位置 offset是偏移位置
@@ -273,9 +304,11 @@ long ftell(FILE *stream);
 //返回文件指针位置
 void rewind(FILE *stream);
 //使得文件指针回到文件开始位置
-~~~
+```
+
 - fseek()
-~~~ c
+
+```c
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -296,7 +329,7 @@ int main()
         strerror(errno);
         exit(1);
     }
-    
+  
     int i = 0;
     while(i < 10){
         unsigned long n = fwrite(buf,1,4,fp);
@@ -306,33 +339,49 @@ int main()
         fseek(fp,0,SEEK_END);
         i++;
     }
-    
+  
     fseek(fp,1024,SEEK_CUR);
     return 0;
 }
-~~~
+```
+
 - ftell()
 - rewind()
+
 ### 刷新缓存
+
 - fflush()
-~~~ c
+
+```c
 printf("Before while");
 fflush();
 while(1)
 printf("After while";)
-~~~
+```
+
 #### 缓冲区
+
 ##### 缓冲区的作用a
+
 大多数情况是好事，合并系统调用
+
 ##### 行缓冲
+
 换行时刷新 stdout
+
 ##### 全缓冲
+
 默认
+
 ##### 无缓冲
+
 stderr
+
 ### 取到完整的一行
+
 - getline()
-~~~ c
+
+```c
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
@@ -359,10 +408,13 @@ int main()
     }
     return 0;
 }
-~~~
+```
+
 ### 临时文件
+
 - tmpfile()
-~~~ c
+
+```c
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -379,10 +431,10 @@ int main()
         SIZE++;
     }
     printf("%d\n",SIZE);
-    
+  
     fwrite(oribuf,1,SIZE,tmpfp);
     fseek(tmpfp,0,SEEK_SET);
-    
+  
 
     FILE *fp;
     fp = fopen("tmp","w");
@@ -394,20 +446,27 @@ int main()
     fclose(fp);
     return 0;
 }
-~~~
+```
+
 ## sysio(系统IO)
+
 **fd**是文件IO中贯穿始终的类型
+
 ### 文件描述符的概念
+
 FILE *
 
 整型数，数组下标，文件描述符优先使用当前可用范围内最小的
+
 ### 文件IO操作
+
 - open
 - close
 - read
 - write
 - lseek
-~~~ c
+
+```c
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -470,13 +529,15 @@ int main(int argc,char** argv)
     exit(0);
 }
 
-~~~
+```
+
 ### 文件IO与标准IO的区别
+
 - 区别 标准IO的吞吐量大 系统IO的响应速度快(是对程序而言，对用户而言stdio的速度“更快”)
 - 转换 `fileno` `fdopen`
 - 注意 标准IO与系统IO不可以混用
 
-~~~ c
+```c
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -491,24 +552,28 @@ int main()
     return 0;
 }
 
-~~~
+```
 
-`strace`可以用来查看一个可执行文件的系统调用，使用`strace ./a.out`可以看到先进行1024次系统调用然后缓冲区满了1024合并为一次系统调用
+`strace`可以用来查看一个可执行文件的系统调用，使用 `strace ./a.out`可以看到先进行1024次系统调用然后缓冲区满了1024合并为一次系统调用
+
 ### IO的效率问题
 
-
 ### 文件共享
+
 `truncate` 或者 `ftruncate`
 
 ### 原子操作
+
 不可分割的操作
-- 作用： 解决竞争和冲突 比如`tmpnam`就操作不原子
+
+- 作用： 解决竞争和冲突 比如 `tmpnam`就操作不原子
 
 ### 程序中的重定向
-- dup
-将传入的文件描述符复制到可使用的(未使用的)最小新文件描述符,在下面的例子中，将标准输出关闭后，文件描述符1空闲(不发生竞争时)，`dup`将会把打开了文件`/tmp/out`的文件描述符复制给文件描述符1 ，之后对文件描述符1 的操作就相当与操作文件`/tmp/out`
 
-~~~ c
+- dup
+  将传入的文件描述符复制到可使用的(未使用的)最小新文件描述符,在下面的例子中，将标准输出关闭后，文件描述符1空闲(不发生竞争时)，`dup`将会把打开了文件 `/tmp/out`的文件描述符复制给文件描述符1 ，之后对文件描述符1 的操作就相当与操作文件 `/tmp/out`
+
+```c
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -531,17 +596,18 @@ int main()
     close(1);//关闭标准输出
     dup(fd);
     close(fd);
-    
+  
     /*********************/
     printf("Hello world\n");
     return 0;
 }
 
-~~~
+```
 
 - dup2
-`dup2`可以避免关闭文件描述符后被其他线程抢占
-~~~ c
+  `dup2`可以避免关闭文件描述符后被其他线程抢占
+
+```c
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -562,7 +628,7 @@ int main()
     }
     //dup2 原子
     dup2(fd,1);
-	
+
 	if (fd != 1) {//打开的文件描述符如果不是1自己，就可以把他关掉了，有重定向后的 1 可以访问文件，保持尽量少的资源使用
 		close(fd);
 	}
@@ -572,12 +638,13 @@ int main()
     return 0;
 }
 
-~~~
+```
 
 ### 同步
+
 - sync
-设备即将解除挂载时进行全局催促，将buffer cache的数据刷新
+  设备即将解除挂载时进行全局催促，将buffer cache的数据刷新
 - fsync
-刷新文件的数据
+  刷新文件的数据
 - fdatasync
-刷新文件的数据部分，不修改文件元数据
+  刷新文件的数据部分，不修改文件元数据
