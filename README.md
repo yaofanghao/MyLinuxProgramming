@@ -21,13 +21,15 @@
 ## 善于使用系统自带的man手册学习
 
 * **CSAPP**
+* K&R-C
 * **linux/unix系统编程手册**
 * [https://man7.org/tlpi/](https://man7.org/tlpi/)
 * **UNIX环境高级编程**
 * **UNIX网络编程**
 * **计算机网络-自顶向下方法**
 * 计算机网络-谢希仁
-* 操作系统导论 √
+* 操作系统导论 
+* 操作系统真象还原
 * Linux是怎样工作的-武内觉 √
 * 嵌入式软件开发笔试面试指南
 * [史上最强最细腻的linux嵌入式C语言学习教程【李慧芹老师】】](https://www.bilibili.com/video/BV18p4y167Md/?share_source=copy_web&vd_source=85816208bdca2a40c310bef0b0d541b4)
