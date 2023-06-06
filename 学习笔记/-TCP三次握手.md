@@ -4,13 +4,6 @@
  * @LastEditTime: 2023-04-23 11:08:03
  * @LastEditors: yao fanghao
 -->
-# 参考资料
-
-* 网络是怎样连接的
-* 计算机网络-自顶向下方法
-* 计算机网络-谢希仁
-* 王道-计算机网络
-* <https://mp.weixin.qq.com/s/M1ZuZPdKnoXEpBmdNFgmZQ>
   
 # TCP基本认识
 
