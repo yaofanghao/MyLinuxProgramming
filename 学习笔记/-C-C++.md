@@ -1,7 +1,7 @@
 <!--
  * @Author: yao fanghao
  * @Date: 2023-04-14 22:13:52
- * @LastEditTime: 2023-04-23 11:41:47
+ * @LastEditTime: 2023-08-10 21:44:02
  * @LastEditors: yao fanghao
 -->
 
@@ -46,9 +46,9 @@
 * const float pi = 3.14
   * 指定常量，同时指定了类别
 * **指针常量和常量指针**
-  * const int *p
-  * int const *p
-  * int *const p
+  * const int *p 常量指针，不能修改指向的值
+  * int const *p 常量指针，不能修改指向的值
+  * int *const p 指针常量，不能修改指针的指向
 
 * static
   * 默认初始化为0
@@ -65,6 +65,9 @@
   * 在另一文件中引用const常量
 * extern"C"
   * 使编译器对这部分按照C语言进行编译
+
+* typedef 
+* define 不做正确性检查
 
 * struct 和 union
   * struct 按最大成员的size或其size的整数倍对齐
@@ -125,8 +128,12 @@
 * 内存管理
   * CSAPP-p587
   * 代码段 数据段 BSS段 堆区 文件映射区 栈区
+  * 代码段：只读存储区和文本
+  * 数据段：存储**已初始化**的全局变量和静态变量
+  * BSS段：存储**未初始化和初始化为0**的全局变量和交通便利
+  * 堆区：程序员分配和管理 malloc
+  * 映射区：动态链接库及调用mmap
   * 栈区：编译器自动分配管理 存放局部变量
-  * 堆区：程序员分配和管理
 
 * **智能指针**
   * unique_ptr、shared_ptr、weak_ptr
