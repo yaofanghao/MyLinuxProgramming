@@ -4,6 +4,8 @@
  * @LastEditTime: 2023-04-21 11:39:27
  * @LastEditors: yao fanghao
  */
+
+ls /
 cp /etc/vim/vimrc ~/.vimrc  # 修改家目录下的vim配置文件
 vim ~/.vimrc
 
@@ -17,6 +19,11 @@ set noexpandtab  # 不要用空格代替制表符
 set number # 设置行号
 
 # Ctrl+P  自动补全
+
+# PowerVim 配置库
+git clone https://github.com/youngyangyang04/PowerVim.git
+cd PowerVim
+sh install.sh
 
 ## vim的入门使用教程
 

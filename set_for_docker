@@ -1,0 +1,7 @@
+
+# docker环境自动安装
+curl -fsSL https://test.docker.com -o test-docker.sh
+sh test-docker.sh
+
+# docker hello world
+sudo docker run ubuntu:20.04 /bin/echo "hello world"
