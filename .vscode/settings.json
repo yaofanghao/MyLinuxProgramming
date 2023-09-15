@@ -165,6 +165,10 @@
         "stat.h": "c",
         "stdlib.h": "c",
         "compare": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "iostream": "cpp",
+        "cmath": "cpp",
+        "xstring": "cpp",
+        "ostream": "cpp"
     },
 }
