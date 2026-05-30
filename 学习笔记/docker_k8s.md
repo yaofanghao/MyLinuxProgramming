@@ -299,4 +299,223 @@ kubectl top pod
 kubectl port-forward svc/my-service 8080:80
 ```
 
+## K8s 控制器详解
+
+### StatefulSet（有状态应用）
+
+* 每个 Pod 有**稳定的网络标识**（Pod-name-[0..N]）和独立的 PVC
+* Pod 按顺序创建/更新/删除（从 N 到 0）
+* 适用于：数据库、ZooKeeper、Kafka、Redis 集群
+
+```yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: web
+spec:
+  serviceName: "nginx"        # 控制网络标识的 Headless Service
+  replicas: 3
+  selector: { matchLabels: { app: nginx } }
+  template:
+    metadata: { labels: { app: nginx } }
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        volumeMounts:
+        - name: www
+          mountPath: /usr/share/nginx/html
+  volumeClaimTemplates:        # 每个 Pod 自动创建独立的 PVC
+  - metadata: { name: www }
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources: { requests: { storage: 1Gi } }
+```
+
+### DaemonSet
+
+* 每个节点运行一个 Pod（新节点加入时自动创建）
+* 适用于：日志采集（Fluentd）、监控（Prometheus Node Exporter）、网络插件（Calico）
+
+```yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluentd
+spec:
+  selector: { matchLabels: { name: fluentd } }
+  template:
+    metadata: { labels: { name: fluentd } }
+    spec:
+      containers:
+      - name: fluentd
+        image: fluentd
+```
+
+### Job / CronJob
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pi
+spec:
+  completions: 5              # 完成 5 次才算成功
+  parallelism: 2              # 并行 2 个 Pod
+  template:
+    spec:
+      containers:
+      - name: pi
+        image: perl
+        command: ["perl", "-Mbignum=bpi", "-wle", "print bpi(2000)"]
+      restartPolicy: Never
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup
+spec:
+  schedule: "0 2 * * *"       # 每天凌晨2点
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: backup
+            image: mysql
+            command: ["mysqldump", "-u", "root", "mydb"]
+          restartPolicy: OnFailure
+```
+
+### HPA（水平自动扩缩容）
+
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: myapp-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: myapp
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+```
+
+## Service Mesh（服务网格）
+
+### Istio 架构
+
+```
+                  控制面 (Pilot / Citadel / Galley)
+                         ↕ xDS 协议
+数据面 (Envoy Sidecar) → 微服务A → Envoy Sidecar → 微服务B
+```
+
+| 组件 | 功能 |
+|------|------|
+| **Envoy** | Sidecar 代理，拦截所有进出 Pod 的流量 |
+| **Pilot** | 服务发现 + 流量管理规则下发 |
+| **Citadel** | 证书管理，mTLS 加密 |
+| **Galley** | 配置验证与分发 |
+
+### 流量管理
+
+```yaml
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: reviews
+spec:
+  hosts:
+  - reviews
+  http:
+  - match:
+    - headers:
+        end-user:
+          exact: jason
+    route:
+    - destination:
+        host: reviews
+        subset: v2          # 金丝雀：jason 用户走 v2
+  - route:
+    - destination:
+        host: reviews
+        subset: v1
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: reviews
+spec:
+  host: reviews
+  subsets:
+  - name: v1
+    labels: { version: v1 }
+  - name: v2
+    labels: { version: v2 }
+```
+
+### 使用 Service Mesh 的好处
+
+* **流量治理**：灰度发布、AB 测试、超时/重试/熔断（无需改代码）
+* **安全**：自动 mTLS 加密、细粒度授权策略
+* **可观测性**：自动采集指标、链路追踪、访问日志
+
+## K8s 集群部署与维护
+
+### kubeadm 搭建集群
+
+```shell
+# 1. 所有节点安装容器运行时
+apt install containerd
+
+# 2. 安装 kubeadm / kubelet / kubectl
+apt install kubeadm kubelet kubectl
+
+# 3. 初始化控制面
+kubeadm init --pod-network-cidr=10.244.0.0/16
+
+# 4. 安装网络插件（以 Flannel 为例）
+kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
+
+# 5. 工作节点加入
+kubeadm join <master-ip>:6443 --token <token> --discovery-token-ca-cert-hash sha256:<hash>
+```
+
+### etcd 备份恢复
+
+```shell
+# 备份
+ETCDCTL_API=3 etcdctl \
+  --endpoints=https://127.0.0.1:2379 \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/server.crt \
+  --key=/etc/kubernetes/pki/etcd/server.key \
+  snapshot save /backup/etcd-snapshot.db
+
+# 恢复
+ETCDCTL_API=3 etcdctl snapshot restore /backup/etcd-snapshot.db \
+  --data-dir=/var/lib/etcd-restored
+```
+
+### 节点管理
+
+```shell
+kubectl cordon node-1           # 标记节点不可调度（已有 Pod 继续运行）
+kubectl drain node-1 --ignore-daemonsets --delete-emptydir-data  # 驱逐节点
+kubectl uncordon node-1         # 恢复节点调度
+kubectl taint nodes node-1 key=value:NoSchedule  # 污点
+```
+
 

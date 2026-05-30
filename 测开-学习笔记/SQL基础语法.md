@@ -453,3 +453,134 @@ SHOW CREATE TABLE table_name;
 -- mysqldump -u root -p dbname > backup.sql
 -- mysql -u root -p dbname < backup.sql
 ```
+
+## MySQL 主从复制
+
+### 复制原理
+
+```
+主库写入 → binlog → IO线程 → 从库 relay log → SQL线程 → 从库数据
+```
+
+| 步骤 | 说明 |
+|------|------|
+| 1 | 主库提交事务时写入 binlog |
+| 2 | 从库 IO 线程连接主库请求 binlog |
+| 3 | 主库 LOG DUMP 线程发送 binlog 给从库 |
+| 4 | 从库 IO 线程写入 relay log |
+| 5 | 从库 SQL 线程重放 relay log |
+
+### 复制模式
+
+| 模式 | 特点 | 一致性 |
+|------|------|--------|
+| 异步复制 | 主库提交即返回，不等从库 | 主库宕机可能丢数据 |
+| 半同步复制 | 至少一个从库确认收到才提交 | 基本不丢数据 |
+| 组复制（Group Replication）| 多数派节点确认 | 强一致性 |
+
+### 配置步骤
+
+```sql
+-- 主库
+SET GLOBAL server_id = 1;
+CREATE USER 'repl'@'%' IDENTIFIED BY 'password';
+GRANT REPLICATION SLAVE ON *.* TO 'repl'@'%';
+SHOW MASTER STATUS;  -- 记录 File 和 Position
+
+-- 从库
+CHANGE MASTER TO
+  MASTER_HOST='master_ip',
+  MASTER_USER='repl',
+  MASTER_PASSWORD='password',
+  MASTER_LOG_FILE='mysql-bin.000001',
+  MASTER_LOG_POS=123;
+START SLAVE;
+SHOW SLAVE STATUS\G  -- 查看 Slave_IO_Running 和 Slave_SQL_Running
+```
+
+### 主从延迟监控与处理
+
+```sql
+-- 查看延迟秒数
+SHOW SLAVE STATUS\G
+-- Seconds_Behind_Master 字段
+
+-- 常见延迟原因
+-- 1. 从库硬件弱于主库
+-- 2. 大事务（一次性删除大量数据）
+-- 3. DDL 操作（ALTER TABLE 锁表）
+-- 4. 从库并行复制参数配置不当
+```
+
+### 高可用方案
+
+| 方案 | 自动故障转移 | 一致性 | 适用场景 |
+|------|------------|--------|---------|
+| MHA | 是（需额外组件）| 最终一致性 | 中小规模 |
+| Orchestrator | 是 | 最终一致性 | 中大规模 |
+| InnoDB Cluster（MySQL 8.0）| 是（Group Replication）| 强一致性 | 新项目首选 |
+
+### 读写分离
+
+```shell
+# 应用层：框架支持（如 ShardingSphere）
+# 中间件层：ProxySQL / MyCat / MaxScale
+# 配置 ProxySQL 读写分离示例
+mysql -h 127.0.0.1 -P 6032 -u admin -p
+INSERT INTO mysql_servers(hostgroup_id, hostname, port) VALUES (0, 'master', 3306);
+INSERT INTO mysql_servers(hostgroup_id, hostname, port) VALUES (1, 'slave1', 3306);
+INSERT INTO mysql_query_rules(rule_id, active, match_digest, destination_hostgroup)
+VALUES (1, 1, '^SELECT.*', 1);  -- SELECT 走从库
+LOAD MYSQL SERVERS TO RUNTIME;
+SAVE MYSQL SERVERS TO DISK;
+```
+
+## SQL 反模式案例
+
+| 反模式 | 问题 | 正确做法 |
+|--------|------|---------|
+| **EAV 模型** | 用行存储属性，查询需大量 JOIN 或 GROUP BY | JSON 列或垂直分表 |
+| **多值列** | 一个字段存逗号分隔的值（`tag1,tag2,tag3`） | 创建关联表存储多值 |
+| **乱用 ENUM** | ENUM 添加新值需要 ALTER TABLE | 关联字典表或 CHECK 约束 |
+| **NULL 滥用** | 用 NULL 表示"不适用"和"未知"混合语义 | 分别设计，或使用默认值 |
+| **隐式类型转换** | `WHERE phone = 13800138000`（数值 vs 字符串） | 保持类型一致或显式转换 |
+
+## 备份恢复策略
+
+### 备份类型
+
+| 类型 | 说明 | 恢复速度 |
+|------|------|---------|
+| 全量备份 | 完整数据库 | 快 |
+| 增量备份 | 自上次备份以来的变更 | 慢（需叠加） |
+| 差异备份 | 自上次全量备份以来的变更 | 中等 |
+
+```shell
+# 逻辑备份（mysqldump，适合小库）
+mysqldump -u root -p --single-transaction --routines --triggers mydb > full.sql
+
+# 物理备份（XtraBackup，适合大库）
+xtrabackup --backup --target-dir=/backup/full
+xtrabackup --prepare --target-dir=/backup/full
+
+# 增量备份
+xtrabackup --backup --target-dir=/backup/inc1 --incremental-basedir=/backup/full
+
+# 恢复
+xtrabackup --copy-back --target-dir=/backup/full
+chown -R mysql:mysql /var/lib/mysql
+```
+
+### PITR（时间点恢复）
+
+```sql
+# 前提：有全量备份 + 所有 binlog
+# 1. 恢复全量备份
+mysql -u root -p mydb < full.sql
+
+# 2. 重放 binlog 到指定时间点
+mysqlbinlog --stop-datetime="2025-06-01 10:00:00" /var/log/mysql/binlog.000001 | mysql -u root -p
+
+# 3. 或恢复到指定 position
+mysqlbinlog --stop-position=12345 /var/log/mysql/binlog.000001 | mysql -u root -p
+```

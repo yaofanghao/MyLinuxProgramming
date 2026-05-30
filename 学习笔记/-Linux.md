@@ -300,3 +300,131 @@ write(fd, buf, n);
 | 资源开销 | 几乎零开销 | 每个 VM 有独立 OS |
 | 隔离性 | 进程级隔离（较弱） | 硬件级隔离（强） |
 | 镜像大小 | MB 级（alpine 约 5MB） | GB 级 |
+
+## Linux 网络编程 IO 模型
+
+### 五种 IO 模型
+
+| 模型 | 特点 | 适用场景 |
+|------|------|---------|
+| **阻塞 IO** | 调用返回前进程阻塞，最直观 | 简单场景、每个连接一个线程 |
+| **非阻塞 IO** | 立即返回，轮询检查结果 | 配合 IO 多路复用 |
+| **IO 多路复用** | select/poll/epoll 监听多个 fd | 高并发（如 Nginx、Redis） |
+| **信号驱动 IO** | SIGIO 信号通知数据就绪 | 较少使用 |
+| **异步 IO** | aio_read，内核完成全部拷贝后再通知 | 高性能 IO（Linux AIO、io_uring） |
+
+### epoll 详解
+
+```c
+// 创建 epoll 实例
+int epfd = epoll_create1(0);
+
+// 添加 fd 到监听集合
+struct epoll_event ev;
+ev.events = EPOLLIN; // 或 EPOLLOUT, EPOLLET(边缘触发)
+ev.data.fd = listen_fd;
+epoll_ctl(epfd, EPOLL_CTL_ADD, listen_fd, &ev);
+
+// 等待事件
+struct epoll_event events[1024];
+int nfds = epoll_wait(epfd, events, 1024, -1);
+for (int i = 0; i < nfds; i++) {
+    // 处理就绪事件
+}
+```
+
+* **LT（水平触发）**：默认模式，只要 fd 有数据就会重复通知（不易丢事件）
+* **ET（边缘触发）**：仅在状态变化时通知一次，必须一次性读完（效率高，需配合非阻塞 IO）
+* epoll 相比 select/poll 的优势：
+  * 只返回就绪的 fd，无需遍历所有 fd（O(1)）
+  * 通过红黑树管理 fd，添加/删除 O(log n)
+  * 支持大量 fd（百万级别无压力）
+
+### Reactor 模式
+
+```
+事件循环(epoll_wait) → 事件分发器 → Handler(业务逻辑处理)
+```
+* 经典实现：Reactor（Nginx、Redis、Netty）
+* Proactor（Windows IOCP 为代表，由操作系统主动完成 IO）
+
+### TCP socket 调优
+
+```shell
+# 减少 Nagle 算法延迟（实时性要求高的场景）
+setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
+
+# 允许重用 TIME_WAIT 端口
+setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
+
+# 内核参数
+echo 1024 > /proc/sys/net/core/somaxconn          # 全连接队列大小
+echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse          # 复用 TIME_WAIT
+echo 1 > /proc/sys/net/ipv4/tcp_fin_timeout        # FIN_WAIT2 超时
+```
+
+## systemd 深入
+
+### Unit 文件编写
+
+```ini
+# /etc/systemd/system/myapp.service
+[Unit]
+Description=My Application
+After=network.target postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User=myapp
+WorkingDirectory=/opt/myapp
+ExecStart=/opt/myapp/bin/start.sh
+ExecStop=/opt/myapp/bin/stop.sh
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
+```
+
+### systemd 类型对比
+
+| Type | 行为 | 使用场景 |
+|------|------|---------|
+| simple | ExecStart 启动后即认为服务已就绪 | 后台服务 |
+| forking | 父进程退出，子进程继续运行 | 传统 daemon |
+| notify | 通过 sd_notify() 通知就绪 | 需要精确状态的服务 |
+| oneshot | 执行一次即退出 | 初始化脚本 |
+| dbus | 在 D-Bus 总线注册后通知就绪 | D-Bus 服务 |
+
+### systemd timer（替代 cron）
+
+```ini
+# /etc/systemd/system/backup.timer
+[Unit]
+Description=Daily backup
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+```
+
+```shell
+systemctl start backup.timer
+systemctl enable backup.timer
+systemctl list-timers
+```
+
+### Journald 日志管理
+
+```shell
+journalctl -u nginx.service         # 查看 nginx 日志
+journalctl -u nginx --since "1 hour ago"    # 最近1小时
+journalctl -u nginx -p err          # 只查看错误级别
+journalctl --disk-usage             # 日志占用磁盘
+journalctl --vacuum-time=7d         # 只保留7天日志
+```

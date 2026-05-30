@@ -719,4 +719,91 @@ print_yellow "Warning"
 | `rm -rf $dir/`（$dir为空时删除根目录） | `rm -rf "${dir:?}/"` |
 | `cmd &`（后台进程输出混乱） | `cmd &>/dev/null &` |
 | `[ $? -ne 0 ]`（繁琐且不够精确） | `if ! command; then` |
+
+## Shell 脚本性能优化
+
+| 原则 | 反面示例 | 优化方案 |
+|------|---------|---------|
+| **减少外部命令** | `for i in $(cat file)` | `while read -r line; do done < file` |
+| **避免循环内 grep/awk** | 每行调一次 grep | 先 awk 处理完再循环 |
+| **用内置字符串操作** | `echo $var \| cut -d: -f1` | `${var%%:*}` |
+| **用 printf 替代 echo** | `echo "$var"`（-n/-e 不可移植） | `printf '%s\n' "$var"` |
+| **合并 pipe 链** | `grep x \| sort \| uniq` | `grep x \| sort -u` |
+| **数组预分配** | 循环内逐个 append | 用 `mapfile` 一次性读入 |
+
+```shell
+# 慢：循环中频繁调用外部命令
+for ip in $(cat ip_list.txt); do
+    ping -c 1 $ip | grep "bytes from" > /dev/null
+    if [ $? -eq 0 ]; then echo "$ip alive"; fi
+done
+
+# 快：先 awk 处理完，再循环
+awk '{print $1}' ip_list.txt | while read ip; do
+    if ping -c 1 "$ip" &>/dev/null; then
+        echo "$ip alive"
+    fi
+done
+```
+
+## 跨平台 Shell 兼容性
+
+### macOS (BSD) vs Linux (GNU) 差异
+
+| 命令 | Linux (GNU) | macOS (BSD) |
+|------|-------------|-------------|
+| sed -i | `sed -i 's/old/new/g' file` | `sed -i '' 's/old/new/g' file` |
+| date | `date -d "yesterday"` | `date -v -1d` |
+| find | `find . -type f -printf '%f\n'` | `find . -type f -exec basename {} \;` |
+| grep | `grep -P '\d+'` | `grep -E '[0-9]+'` |
+| head/tail | `head -n -1`（排除最后一行） | 不支持负数 |
+
+### 兼容写法
+
+```shell
+# 检测 OS
+case "$(uname -s)" in
+    Linux*)  sed_i='sed -i' ;;
+    Darwin*) sed_i='sed -i ""' ;;
+    *)       echo "Unsupported OS"; exit 1 ;;
+esac
+eval "$sed_i 's/old/new/g' file.txt"
+
+# 获取昨天日期
+if date -d "yesterday" >/dev/null 2>&1; then
+    yesterday=$(date -d "yesterday" +%Y%m%d)  # GNU
+else
+    yesterday=$(date -v-1d +%Y%m%d)           # BSD
+fi
+```
+
+### shebang 选择
+
+| shebang | 说明 |
+|---------|------|
+| `#!/bin/bash` | Linux 默认，功能最全 |
+| `#!/bin/sh` | POSIX 标准，可移植性好（但无数组/关联数组） |
+| `#!/usr/bin/env bash` | 通过 PATH 寻找 bash，macOS 常用 |
+
+## 日志轮转（logrotate）
+
+```shell
+# /etc/logrotate.d/myapp
+/var/log/myapp/*.log {
+    daily                    # 每日轮转
+    rotate 7                 # 保留7份历史
+    compress                 # 压缩历史日志
+    delaycompress            # 延迟一天压缩
+    missingok                # 文件不存在不报错
+    notifempty               # 空文件不轮转
+    copytruncate             # 先拷贝再截断（不中断程序写入）
+    postrotate
+        /bin/kill -HUP `cat /var/run/myapp.pid 2>/dev/null` 2>/dev/null || true
+    endscript
+}
+```
+
+```shell
+# 手动触发测试
+logrotate -vf /etc/logrotate.d/myapp
 ```

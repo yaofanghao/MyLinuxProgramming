@@ -624,3 +624,136 @@ vruntime += 实际运行时间 * (NICE_0_LOAD / 进程权重)
 | 上下文切换消耗什么？ | 寄存器保存恢复、TLB 刷新、cache 污染、调度器决策 |
 | 自旋锁和互斥锁选型？ | 短临界区用自旋锁（不睡眠），长临界区用互斥锁（睡眠让出 CPU） |
 | epoll 为什么比 select 快？ | epoll 用红黑树管理 fd，注册回调，只返回就绪的 fd，无需遍历所有 fd |
+
+## 内核关键数据结构
+
+### task_struct（进程描述符）
+
+```c
+struct task_struct {
+    // 进程状态
+    volatile long state;                 // TASK_RUNNING / TASK_INTERRUPTIBLE 等
+    // 调度相关
+    const struct sched_class *sched_class;
+    struct sched_entity se;              // CFS 调度实体（含 vruntime）
+    // 进程标识
+    pid_t pid;
+    struct task_struct __rcu *parent;    // 父进程
+    struct list_head children;           // 子进程链表
+    // 内存
+    struct mm_struct *mm, *active_mm;    // 进程地址空间
+    // 文件系统
+    struct fs_struct *fs;                // 当前目录、root 等
+    struct files_struct *files;          // 打开的文件描述符表
+    // 信号
+    struct signal_struct *signal;
+    struct sighand_struct __rcu *sighand;
+    // 命名空间
+    struct nsproxy *nsproxy;
+    // 时间统计
+    u64 utime, stime;                    // 用户态/内核态运行时间
+    // 链表
+    struct list_head tasks;              // 全局进程链表
+};
+```
+
+### 关键关系图
+
+```
+task_struct           mm_struct                vm_area_struct
+  ├── mm ──────────►  ├── pgd (页全局目录)      ├── vm_start
+  ├── files ─────────► ├── mmap ───────────────► ├── vm_end
+  │   └─ fd_table[]   │                         ├── vm_flags (R/W/X)
+  │       ├─ fd[0]    │                         └── vm_file → file
+  │       ├─ fd[1]    └── mm_users               └── f_op → file_operations
+  │       └─ fd[2]                                          ├── .read = xxx_read
+  └── fs ──► fs_struct                                        └── .write = xxx_write
+              ├── pwd (当前目录 dentry)
+              └── root (根目录 dentry)
+```
+
+### 内核链表 list_head
+
+```c
+// 内核中"侵入式"链表：节点直接嵌入到数据结构中
+struct list_head {
+    struct list_head *next, *prev;
+};
+
+// 使用方式
+struct my_data {
+    int value;
+    struct list_head list;  // 嵌入链表节点
+};
+
+// 宏操作
+struct my_data *pos;
+list_for_each_entry(pos, &head, list) {
+    // 通过 list 字段的指针反推出 my_data 的地址
+}
+```
+
+## 操作系统面试手撕代码
+
+### 线程池实现（C++ 伪代码）
+
+```cpp
+class ThreadPool {
+    std::vector<std::thread> workers;
+    std::queue<std::function<void()>> tasks;
+    std::mutex mtx;
+    std::condition_variable cv;
+    bool stop = false;
+
+public:
+    ThreadPool(size_t n) {
+        for (size_t i = 0; i < n; i++)
+            workers.emplace_back([this] {
+                while (true) {
+                    std::function<void()> task;
+                    {
+                        std::unique_lock lock(mtx);
+                        cv.wait(lock, [this] { return stop || !tasks.empty(); });
+                        if (stop && tasks.empty()) return;
+                        task = std::move(tasks.front());
+                        tasks.pop();
+                    }
+                    task();
+                }
+            });
+    }
+    template<class F> void enqueue(F&& f) {
+        std::unique_lock lock(mtx);
+        tasks.emplace(std::forward<F>(f));
+        cv.notify_one();
+    }
+    ~ThreadPool() {
+        { std::unique_lock lock(mtx); stop = true; }
+        cv.notify_all();
+        for (auto& w : workers) w.join();
+    }
+};
+```
+
+### 简易内存分配器
+
+```c
+// 实现思路：维护一个空闲链表，首次适应/最佳适应算法
+struct block {
+    size_t size;
+    struct block *next;
+    int free;
+};
+#define BLOCK_SIZE sizeof(struct block)
+
+void *my_malloc(size_t size) {
+    // 遍历空闲链表
+    // 找到足够大的空闲块 → 分割（若剩余够大）→ 返回
+    // 找不到 → 调用 sbrk/mmap 扩展堆
+}
+
+void my_free(void *ptr) {
+    // 标记为空闲
+    // 合并相邻空闲块（防止外部碎片）
+}
+```

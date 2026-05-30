@@ -288,3 +288,110 @@ ps aux --sort=-%cpu | head -10 # CPU占用前10
 perf top                       # 实时性能分析
 strace -p PID                  # 跟踪进程系统调用
 ```
+
+## Linux 文件系统原理
+
+### inode 详解
+
+* 每个文件有一个 inode（索引节点），存储文件的元信息
+* `ls -i` 查看文件的 inode 编号
+* inode 包含：文件类型、权限、链接数、UID、GID、大小、时间戳、数据块指针
+* **硬链接**：多个目录项指向同一个 inode，inode 链接数+1
+  * 不能跨文件系统（inode 编号在文件系统内唯一）
+  * 不能链接目录（防止循环引用）
+* **软链接**（符号链接）：独立的 inode，内容是目标文件的路径
+  * 可跨文件系统
+  * 目标删除后软链接"悬空"（broken link）
+* `stat file` 查看文件的完整 inode 信息
+
+### 目录结构原理
+
+* 目录本质上是一个特殊的文件，内容为"文件名 → inode 编号"的映射表
+* `.` 指向当前目录的 inode，`..` 指向父目录的 inode
+* 根目录 `/` 的 inode 编号固定为 2
+
+## LVM 逻辑卷管理
+
+### 概念层次
+
+```
+物理卷(PV) → 卷组(VG) → 逻辑卷(LV) → 文件系统
+/dev/sda1    my_vg        my_lv        /data
+```
+
+### 常用命令
+
+```shell
+# 创建 PV
+pvcreate /dev/sdb1
+
+# 创建 VG
+vgcreate my_vg /dev/sdb1
+
+# 创建 LV
+lvcreate -L 100G -n my_lv my_vg
+
+# 格式化并挂载
+mkfs.ext4 /dev/my_vg/my_lv
+mount /dev/my_vg/my_lv /data
+
+# 动态扩容 LV（无需卸载）
+lvextend -L +50G /dev/my_vg/my_lv
+resize2fs /dev/my_vg/my_lv
+
+# 查看状态
+pvs / vgs / lvs
+```
+
+### MBR vs GPT
+
+| 特性 | MBR | GPT |
+|------|-----|-----|
+| 最大分区 | 2TB | 9.4ZB |
+| 分区数 | 4 个主分区 | 128 个（默认） |
+| 备份 | 无 | 头和尾各一份分区表 |
+| 兼容性 | 所有系统 | UEFI 要求 GPT |
+
+## Linux 安全基础
+
+### iptables/nftables 防火墙
+
+```shell
+# iptables 基础规则
+iptables -A INPUT -p tcp --dport 22 -s 192.168.1.0/24 -j ACCEPT
+iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -P INPUT DROP  # 默认拒绝所有入站
+
+# nftables（iptables 的现代替代）
+nft add rule inet filter input tcp dport 22 accept
+```
+
+### SELinux 基础
+
+* **Enforcing**：强制模式，违反策略直接拒绝
+* **Permissive**：违反策略只记录日志不拒绝（排查用）
+* **Disabled**：关闭
+
+```shell
+getenforce                    # 查看当前模式
+setenforce 0                  # 临时切换到 Permissive
+setenforce 1                  # 临时切换到 Enforcing
+ausearch -m avc -ts recent    # 查看 SELinux 拒绝日志
+```
+
+### SSH 安全加固
+
+```shell
+# /etc/ssh/sshd_config 关键配置
+Port 2222                     # 更改默认端口（避开扫描）
+PermitRootLogin no            # 禁止 root 直接登录
+PasswordAuthentication no     # 禁止密码登录（仅密钥）
+AllowUsers alice bob          # 白名单用户
+MaxAuthTries 3                # 最大认证尝试次数
+ClientAliveInterval 300       # 空闲超时断连
+
+# fail2ban 防止暴力破解
+apt install fail2ban
+systemctl start fail2ban
+```

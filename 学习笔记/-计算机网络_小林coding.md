@@ -389,4 +389,131 @@ cat /proc/sys/net/ipv4/tcp_keepalive_probes    # 9 次（最多探测次数）
   * 动态内容无法缓存（动态加速用 DCDN）
   * 刷新预热（API 强制更新缓存）
 
+## DNS 深度解析
+
+### 解析全过程
+
+```
+用户输入 www.example.com
+  → 浏览器 DNS 缓存（如有，直接返回）
+  → OS 缓存（/etc/hosts 优先）
+  → 本地 DNS 服务器（LDNS，由 ISP 或 114.114.114.114 提供）
+  → 根域名服务器（返回 .com TLD 服务器地址）
+  → .com TLD 服务器（返回 example.com 权威服务器地址）
+  → example.com 权威服务器（返回 IP 地址）
+```
+
+### DNS 记录类型
+
+| 类型 | 说明 | 示例 |
+|------|------|------|
+| A | IPv4 地址 | `example.com. IN A 93.184.216.34` |
+| AAAA | IPv6 地址 | `example.com. IN AAAA 2606:2800:220::1` |
+| CNAME | 别名指向 | `www.example.com. IN CNAME example.com.` |
+| MX | 邮件交换 | `example.com. IN MX 10 mail.example.com.` |
+| NS | 权威名称服务器 | `example.com. IN NS ns1.example.com.` |
+| TXT | 文本记录 | 用于 SPF/DKIM/DMARC 验证 |
+
+### 常见问题
+
+* **DNS 缓存污染**：攻击者向 DNS 服务器注入虚假记录。防御：DNSSEC、加密 DNS（DoH/DoT）
+* **DNS 劫持**：运营商劫持 DNS 返回广告页面。防御：使用 HTTPDNS 或公共 DNS（8.8.8.8）
+* **HTTPDNS**：绕过传统 DNS，直接通过 HTTP 接口向服务端获取 IP，移动端防劫持方案
+
+## 负载均衡与反向代理（Nginx）
+
+### Nginx 配置示例
+
+```nginx
+upstream backend {
+    # 负载均衡算法
+    # 默认：轮询（round-robin）
+    # least_conn：最小连接数
+    # ip_hash：基于客户端 IP 会话保持
+    least_conn;
+
+    server 192.168.1.10:8080 weight=3 max_fails=3 fail_timeout=30s;
+    server 192.168.1.11:8080 weight=2;
+    server 192.168.1.12:8080 backup;   # 备用（主节点全挂才启用）
+}
+
+server {
+    listen 80;
+    server_name api.example.com;
+
+    location / {
+        proxy_pass http://backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 30s;
+    }
+
+    # SSL 卸载
+    listen 443 ssl;
+    ssl_certificate /etc/nginx/ssl/cert.pem;
+    ssl_certificate_key /etc/nginx/ssl/key.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+}
+```
+
+### Nginx 优化
+
+```nginx
+worker_processes auto;                    # 等于 CPU 核心数
+worker_connections 65536;                 # 单个 worker 最大连接数
+events {
+    use epoll;                            # Linux 使用 epoll
+    multi_accept on;                      # 一次 accept 多个连接
+}
+sendfile on;                              # 零拷贝发送文件
+tcp_nopush on;                            # 优化 TCP 包发送
+keepalive_timeout 65;
+client_max_body_size 10m;
+```
+
+### 四层 vs 七层负载均衡
+
+| 维度 | 四层（L4） | 七层（L7） |
+|------|-----------|-----------|
+| 工作层级 | 传输层（TCP/UDP） | 应用层（HTTP/HTTPS） |
+| 转发依据 | IP + 端口 | URL、Header、Cookie、内容 |
+| 性能 | 高（简单转发） | 中等（需要解析报文） |
+| 典型工具 | LVS、HAProxy（TCP 模式） | Nginx、HAProxy（HTTP 模式）|
+| 适用场景 | TCP/UDP 协议代理 | HTTP 应用路由、限流、鉴权 |
+
+## WebSocket
+
+### 握手过程
+
+```
+客户端 → 服务端：
+GET /chat HTTP/1.1
+Host: server.example.com
+Upgrade: websocket              # 请求协议升级
+Connection: Upgrade
+Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==   # 随机 Base64 密钥
+Sec-WebSocket-Version: 13
+
+服务端 → 客户端：
+HTTP/1.1 101 Switching Protocols
+Upgrade: websocket
+Connection: Upgrade
+Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=  # 对 Key 的 SHA1 签名
+```
+
+* 握手完成后，连接从 HTTP 升级为 WebSocket，全双工通信
+* 数据帧格式：opcode（text/binary/close/ping/pong）+ payload
+* 掩码（masking）：客户端→服务端的数据需要掩码（防缓存污染）
+
+### 与 HTTP 长轮询/SSE 对比
+
+| 特性 | WebSocket | HTTP 长轮询 | SSE（Server-Sent Events） |
+|------|-----------|-------------|--------------------------|
+| 方向 | 全双工 | 客户端主动 | 服务端→客户端单向 |
+| 协议 | ws:// / wss:// | HTTP | HTTP（text/event-stream）|
+| 开销 | 握手后无额外头部 | 每次请求有头部 | 连接保持，流式数据 |
+| 适用 | 即时通讯、游戏 | 旧的兼容方案 | 通知推送、日志流 |
+
  

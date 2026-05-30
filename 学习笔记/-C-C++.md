@@ -374,3 +374,99 @@ void quick_sort(int arr[], int l, int r) {
 * 传参：输入参数用 `const T&`，输出参数用指针
 * 智能指针优先于裸指针
 * 头文件自包含，尽量 forward declare 减少依赖
+
+## 现代 CMake 构建实践
+
+### 推荐写法（Modern CMake，>= 3.10）
+
+```cmake
+cmake_minimum_required(VERSION 3.16)
+project(MyProject VERSION 1.0.0 LANGUAGES CXX)
+
+# 指定 C++ 标准
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# 库目标
+add_library(mylib
+    src/util.cpp
+    src/network.cpp
+)
+target_include_directories(mylib PUBLIC include)
+target_link_libraries(mylib PUBLIC Threads::Threads)
+
+# 可执行目标
+add_executable(myapp src/main.cpp)
+target_link_libraries(myapp PRIVATE mylib)
+```
+
+### 常见模式
+
+| 模式 | 说明 |
+|------|------|
+| 不使用 `CMAKE_CXX_FLAGS` 直接修改 | 用 `target_compile_options` 按目标设置 |
+| 不使用 `include_directories` | 用 `target_include_directories` 指定可见范围 |
+| 使用 `PRIVATE/PUBLIC/INTERFACE` | 控制依赖传播 |
+| 使用 `cmake --build .` | 不直接调用 make |
+
+### 构建优化
+
+```shell
+# LTO 链接时优化
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+
+# PCH 预编译头加速
+target_precompile_headers(myapp PRIVATE <vector> <string> <iostream>)
+
+# 调试/发布配置
+cmake -B build -DCMAKE_BUILD_TYPE=Debug
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-O2 -march=native"
+```
+
+## C++ 性能优化实战
+
+### 缓存友好代码
+
+```cpp
+// 坏：按列遍历（步长跳跃大，cache miss 高）
+for (int j = 0; j < COLS; j++)
+    for (int i = 0; i < ROWS; i++)
+        sum += matrix[i][j];   // 每次跳一行
+
+// 好：按行遍历（连续访问，cache hit 高）
+for (int i = 0; i < ROWS; i++)
+    for (int j = 0; j < COLS; j++)
+        sum += matrix[i][j];
+```
+
+### False Sharing 避免
+
+```cpp
+// 多个线程写相邻变量，导致同一 cache line 无效
+struct alignas(64) PaddedCounter {  // 64 字节对齐（典型 cache line 大小）
+    std::atomic<long> value;
+    char padding[64 - sizeof(long)];  // 填充剩余空间
+};
+PaddedCounter counters[4];  // 每个线程一个，不会互相干扰
+```
+
+### 编译期优化
+
+```cpp
+// RVO / NRVO：编译器省略临时对象拷贝
+std::vector<int> createVec() {
+    std::vector<int> v(1000);
+    return v;  // 不拷贝，直接构造到调用方的栈上
+}
+
+// SSO（Small String Optimization）：小字符串栈上存储
+std::string s = "hello";  // <= 15 字节，栈上存储，无堆分配
+```
+
+### 内存池（Arena Allocator）
+
+```cpp
+// 适用场景：大量小对象频繁分配释放
+std::pmr::monotonic_buffer_resource pool(1024 * 1024);  // 预分配 1MB
+std::pmr::vector<int> vec(&pool);  // 所有分配从 pool 取，无需系统调用
+```
