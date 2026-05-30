@@ -7,7 +7,7 @@ do
    echo "$folder:"
    for file in $folder/*
    do
-      if [ -x $file ]
+      if [ -x "$file" ]
       then
          echo "   $file"
       fi

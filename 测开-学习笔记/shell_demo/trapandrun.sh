@@ -39,22 +39,22 @@ done
 #
 ####################### Check Script to Run #######################
 #
-shift $[ $OPTIND - 1 ] #Script name should be in parameter
+shift $(( $OPTIND - 1 )) #Script name should be in parameter
 #
-if [ -z $@ ]
+if [ -z "$*" ]
 then
      echo
      echo 'Error: Script name not provided.'
      echo 'Usage: -S "Signal(s)" script-to-run-name'
      echo 'Exiting script...'
      exit
-elif [ -O $@ ] && [ -x $@ ]
+elif [ -O "$1" ] && [ -x "$1" ]
 then
-     scriptToRun=$@
-     scriptOutput="$@.out"
+     scriptToRun="$1"
+     scriptOutput="$1.out"
 else
      echo
-     echo "Error: $@ is either not owned by you or not executable."
+     echo "Error: $1 is either not owned by you or not executable."
      echo "Exiting..."
      exit
 fi

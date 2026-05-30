@@ -37,7 +37,6 @@ static int parse(char *linebuf,glob_t *globres){
   while (1){
     tok = strsep(&linebuf,DELIMS);
     if (tok == NULL){
-      break;
       return -1;
     }else if(strcmp(tok,"cd") == 0){
       char *path = strsep(&linebuf,DELIMS);
@@ -58,24 +57,27 @@ int main()
 {
   printf("This is YSHELL\n");
 
-  pid_t pid;
+  pid_t pid = -1;
   char *linebuf = NULL;
   size_t lienbuf_size = 0;
-  glob_t globres;//解析命令行
+  glob_t globres;
+  memset(&globres, 0, sizeof(globres));
 
   while(1){
     prompt();
 
-
     //获取命令
-    getline(&linebuf,&lienbuf_size,stdin);
+    if (getline(&linebuf,&lienbuf_size,stdin) == -1){
+      printf("\nGoodbye!\n");
+      break;
+    }
     //解析命令
     int ret = parse(linebuf,&globres);
 
     if (ret == -1){
-
+      // parse error
     }else if (ret == 0){//内部命令
-
+      // already handled in parse()
     }else if (ret == 1){//外部命令
       fflush(NULL);
       pid = fork();
@@ -83,15 +85,19 @@ int main()
         perror("fork()");
         exit(1);
       }else if(pid == 0){ // 子进程
-        printf("%d\n", pid);
         execvp(globres.gl_pathv[0],globres.gl_pathv);
-        perror("execl()");
+        perror("execvp()");
         exit(1);
       }
     }
-    printf("%d\n", pid);
-    waitpid(pid,NULL,0);
+    if (pid > 0){
+      waitpid(pid,NULL,0);
+      pid = -1;
+    }
+    globfree(&globres);
+    memset(&globres, 0, sizeof(globres));
   }
 
+  free(linebuf);
   exit(0);
 }

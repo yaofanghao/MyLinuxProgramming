@@ -9,36 +9,50 @@
 
 #define FNAME "/tmp/out"
 
-static int deamonize(){
+static int daemonize(){
     int fd;
     pid_t pid;
-    pid = fork();
 
+    pid = fork();
     if (pid < 0){
         return -1;
     }
-
     if (pid > 0){
         exit(0);
     }
 
-    fd = open("/dev/null",O_RDWR);//输出都忽略
+    // 子进程：创建新会话，脱离终端
+    if (setsid() < 0){
+        return -1;
+    }
+
+    // 第二次 fork，防止重新获取终端
+    pid = fork();
+    if (pid < 0){
+        return -1;
+    }
+    if (pid > 0){
+        exit(0);
+    }
+
+    // 设置文件权限掩码
+    umask(0);
+
+    // 关闭所有继承的文件描述符 / 重定向到 /dev/null
+    fd = open("/dev/null", O_RDWR);
     if (fd < 0){
         return -1;
     }
-    if (pid == 0){
-        printf("test");
-        fflush(NULL);
-        dup2(fd,0);
-        dup2(fd,1);
-        dup2(fd,2);
-        if (fd > 2){
-            close(fd);
-        }
-        setsid();//脱离终端
-        //umask();
-        chdir("/");
+    dup2(fd, 0);
+    dup2(fd, 1);
+    dup2(fd, 2);
+    if (fd > 2){
+        close(fd);
     }
+
+    // 切换工作目录
+    chdir("/");
+
     return 0;
 }
 
@@ -49,10 +63,10 @@ int main()
     //开启日志服务
     openlog("print i",LOG_PID,LOG_DAEMON);
 
-    if (deamonize()){
+    if (daemonize()){
         syslog(LOG_ERR,"init failed!");
     }else{
-        syslog(LOG_INFO,"successded!");
+        syslog(LOG_INFO,"succeeded!");
     }
 
     fp = fopen(FNAME,"w+");
@@ -63,11 +77,14 @@ int main()
 
     syslog(LOG_INFO,"%s opened",FNAME);
 
-    for(int i = 0; ;i++){
+    // 守护进程循环写入日志，收到 SIGTERM 信号时退出
+    int i = 0;
+    while(1){
         fprintf(fp,"%d\n",i);
-        fflush(NULL);
+        fflush(fp);
         syslog(LOG_DEBUG,"%d 写入",i);
         sleep(1);
+        i++;
     }
 
     closelog();

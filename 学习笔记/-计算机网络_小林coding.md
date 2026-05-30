@@ -258,4 +258,135 @@
 
 ## -半连接队列和全连接队列
 
+* **半连接队列（SYN Queue）**：服务端收到 SYN 后，连接处于 SYN_RCVD 状态，放入半连接队列
+* **全连接队列（Accept Queue）**：三次握手完成后，连接转入 ESTABLISHED 状态，移入全连接队列
+* `ss -lnt` 查看：`Recv-Q` 表示全连接队列大小，`Send-Q` 表示最大长度
+* 全连接队列满时，内核行为由 `tcp_abort_on_overflow` 控制
+
+# 扩展补充
+
+## HTTP 深入
+
+### HTTP 请求方法对比
+
+| 方法 | 幂等 | 安全 | 说明 |
+|------|:----:|:----:|------|
+| GET | 是 | 是 | 获取资源，不应改变状态 |
+| HEAD | 是 | 是 | 类似 GET 但不返回 body |
+| POST | 否 | 否 | 创建/提交资源 |
+| PUT | 是 | 否 | 替换/更新资源（完整替换） |
+| PATCH | 否 | 否 | 部分更新资源 |
+| DELETE | 是 | 否 | 删除资源 |
+| OPTIONS | 是 | 是 | 查询服务器支持的 HTTP 方法 |
+
+### HTTP 状态码
+
+| 范围 | 分类 | 常见状态码 |
+|------|------|-----------|
+| 1xx | 信息 | 101 Switching Protocols（WebSocket 升级） |
+| 2xx | 成功 | 200 OK、201 Created、204 No Content |
+| 3xx | 重定向 | 301 Moved Permanently、302 Found、304 Not Modified |
+| 4xx | 客户端错误 | 400 Bad Request、401 Unauthorized、403 Forbidden、404 Not Found、429 Too Many Requests |
+| 5xx | 服务端错误 | 500 Internal Server Error、502 Bad Gateway、503 Service Unavailable、504 Gateway Timeout |
+
+### HTTP 缓存策略
+
+```
+强制缓存（不请求服务器）:
+  Cache-Control: max-age=3600
+  Expires: Wed, 21 Oct 2025 07:28:00 GMT
+
+协商缓存（请求服务器验证）:
+  Last-Modified / If-Modified-Since（时间戳）
+  ETag / If-None-Match（内容哈希）
+```
+
+* 优先级：`Cache-Control` > `Expires` > `ETag` > `Last-Modified`
+* `Cache-Control: no-cache` 每次请求服务器验证；`no-store` 完全禁止缓存
+
+### HTTPS 握手（TLS 1.3）
+
+1. ClientHello：客户端发送支持的 TLS 版本、加密套件、Key Share（公钥）
+2. ServerHello：服务端选择加密套件，发送证书 + 签名 + Key Share
+3. 双方各自计算共享密钥（ECDHE）
+4. 客户端发送 Finished（加密握手消息的 MAC）
+5. 服务端发送 Finished
+6. **TLS 1.3 只需 1-RTT**（vs TLS 1.2 需要 2-RTT）
+7. **0-RTT**（early data）：复用之前会话可立即发送数据
+
+### HTTP/2 多路复用
+
+* 单一 TCP 连接上并行多个流（stream）
+* **二进制分帧**：HTTP 头部和数据被拆分为帧（HEADERS、DATA、SETTINGS 等）
+* **头部压缩（HPACK）**：静态表（61 个常用头部）、动态表（自定义）、Huffman 编码
+* **服务器推送（Server Push）**：服务端可主动推送资源（如 HTML 中引用的 CSS/JS）
+* **优先级**：流有依赖关系树，可设置权重
+
+### HTTP/3 与 QUIC
+
+* 基于 UDP，解决 TCP 队头阻塞问题
+* **QUIC 特性**：
+  * 0-RTT 连接建立
+  * 连接迁移（IP/端口变化不中断连接，如 Wi-Fi 切 4G）
+  * 多路复用无队头阻塞（一个流丢包不影响其他流）
+  * 内置加密（TLS 1.3 集成，无明文版本）
+
+## TCP 深入
+
+### TCP 拥塞控制算法对比
+
+| 算法 | 特点 | 适用场景 |
+|------|------|---------|
+| Reno | 经典算法：慢启动 + 拥塞避免 + 快重传 + 快恢复 | 传统网络 |
+| Cubic | 窗口增长用三次函数，高带宽下更激进 | Linux 默认（高带宽长肥网络） |
+| BBR | 基于带宽和 RTT 建模，不依赖丢包 | 高丢包、高延迟链路 |
+| BIC | Binary Increase Control，Cubic 的前身 | 已淘汰 |
+
+### TCP 保活机制
+
+```shell
+# 查看/修改保活参数
+cat /proc/sys/net/ipv4/tcp_keepalive_time      # 7200 秒（2小时无数据开始探测）
+cat /proc/sys/net/ipv4/tcp_keepalive_intvl     # 75 秒（探测间隔）
+cat /proc/sys/net/ipv4/tcp_keepalive_probes    # 9 次（最多探测次数）
+```
+
+* 应用层心跳比 TCP 保活更灵活，推荐使用
+
+### TIME_WAIT 详解
+
+* **作用**：
+  1. 确保最后一个 ACK 能到达服务端（服务端没收到会重发 FIN）
+  2. 使过期连接数据包在网络中自然消失
+* **持续时间**：2 MSL（Maximum Segment Lifetime，通常 60 秒）
+* **过多 TIME_WAIT 的影响**：
+  * 占用端口（客户端）
+  * 占用内存（每个 socket 约 1-2KB）
+* **优化**：
+  * `tcp_tw_reuse`：客户端复用 TIME_WAIT socket（需开启时间戳）
+  * `tcp_tw_recycle`：已被废弃（NAT 环境下有 Bug）
+  * `tcp_max_tw_buckets`：限制 TIME_WAIT 数量
+
+## 网络编程常见问题
+
+| 问题 | 原因 | 解决 |
+|------|------|------|
+| 端口占用 Address already in use | TIME_WAIT 状态 | `SO_REUSEADDR` 选项 |
+| 连接被拒绝 Connection refused | 端口未监听 / 防火墙 | 检查服务状态和 iptables |
+| 连接超时 | 防火墙拦截 / 路由不可达 | 检查网络连通性 |
+| 粘包 | TCP 是流式协议，无消息边界 | 应用层定义消息格式（长度前缀 / 分隔符） |
+| 大量 CLOSE_WAIT | 服务端未主动 close | 检查代码是否正确关闭 socket |
+
+## CDN（内容分发网）
+
+* **原理**：在全球部署边缘节点，缓存静态资源，用户请求路由到最近的节点
+* **关键技术**：
+  * DNS 智能解析：返回离用户最近的节点 IP
+  * 全局负载均衡（GSLB）
+  * 缓存策略：主动推送（预热）vs 被动回源（首次访问）
+* **常见问题**：
+  * 缓存命中率低（设置合理的 Cache-Control）
+  * 动态内容无法缓存（动态加速用 DCDN）
+  * 刷新预热（API 强制更新缓存）
+
  

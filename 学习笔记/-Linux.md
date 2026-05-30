@@ -170,3 +170,133 @@
   * 脏页的标记
   
 * 超线程
+
+## 系统调用深入
+
+### 系统调用流程（x86-64）
+
+1. 应用程序调用库函数（如 `write()`）
+2. 库函数将参数放入寄存器（rdi, rsi, rdx, r10, r8, r9）
+3. 将系统调用号放入 rax 寄存器
+4. 执行 `syscall` 指令（比 `int 0x80` 更快）
+5. CPU 切换到内核模式，内核执行 `sys_call_table[rax]`
+6. 返回结果在 rax 中，出错时置负值（errno）
+
+### 常见系统调用号（x86-64）
+
+| 调用号 | 函数 | 说明 |
+|-------|------|------|
+| 0 | read | 读取文件 |
+| 1 | write | 写入文件 |
+| 2 | open | 打开文件 |
+| 9 | mmap | 内存映射 |
+| 56 | clone | 创建进程/线程 |
+| 57 | fork | 创建子进程 |
+| 59 | execve | 执行程序 |
+| 60 | exit | 退出进程 |
+
+### 系统调用 vs 库函数
+
+```c
+// 库函数（带缓冲，用户态缓存）
+fwrite(buf, 1, n, fp);
+// → 用户空间 stdio 缓冲区
+// → 缓冲区满时才触发 write() 系统调用
+
+// 系统调用（直接进入内核，无缓冲）
+write(fd, buf, n);
+// → 立即进入内核，性能开销大
+```
+
+## /proc 文件系统
+
+* 内核暴露信息的虚拟文件系统，不占用磁盘
+
+| 文件 | 说明 |
+|------|------|
+| /proc/cpuinfo | CPU 信息（型号、核心数、缓存） |
+| /proc/meminfo | 内存信息（总量、可用、缓存） |
+| /proc/self | 当前进程的 proc 目录 |
+| /proc/[pid]/fd | 进程打开的文件描述符 |
+| /proc/[pid]/maps | 进程内存映射 |
+| /proc/[pid]/status | 进程状态、内存、权限 |
+| /proc/[pid]/cmdline | 进程启动命令行 |
+| /proc/[pid]/environ | 进程环境变量 |
+| /proc/loadavg | 系统负载（1/5/15分钟） |
+| /proc/uptime | 系统运行时间 |
+
+## 进程优先级与调度策略
+
+### Linux 调度策略
+
+| 策略 | 说明 | 应用场景 |
+|------|------|---------|
+| SCHED_OTHER (CFS) | 默认，完全公平调度 | 普通进程 |
+| SCHED_FIFO | 实时 FIFO，先到先服务 | 实时任务（高优先级） |
+| SCHED_RR | 实时轮转，时间片 | 实时任务（同优先级轮转） |
+| SCHED_BATCH | 批量调度 | CPU 密集型批处理 |
+| SCHED_IDLE | 低优先级 | 后台空闲任务 |
+
+### CFS（完全公平调度器）
+
+* 每个进程维护虚拟运行时间 `vruntime`
+* 每次选择 `vruntime` 最小的进程运行
+* 权重（nice 值）决定时间片分配比例
+* 红黑树管理就绪队列，O(log n) 选取
+
+### cgroups（控制组）
+
+* 限制、隔离、统计进程组的资源使用
+* **子系统**：
+  * cpu：CPU 时间分配
+  * memory：内存上限
+  * blkio：块设备 I/O
+  * cpuset：绑定 CPU 核心
+  * pids：进程数上限
+* **典型路径**：`/sys/fs/cgroup/cpu/docker/[container-id]/`
+* **应用**：Docker 容器资源限制、systemd 服务资源控制
+
+### namespaces（命名空间）
+
+* Linux 容器（Docker）的核心隔离机制
+
+| 命名空间 | 隔离内容 | 作用 |
+|---------|---------|------|
+| PID | 进程编号 | 容器内 PID 从 1 开始 |
+| Network | 网络设备、IP、端口 | 容器独立网络栈 |
+| Mount | 挂载点 | 容器独立文件系统 |
+| UTS | 主机名和域名 | 容器独立主机名 |
+| User | 用户和 UID | 容器内 UID 映射 |
+| IPC | 进程间通信资源 | 容器独立 IPC |
+
+## 性能分析工具
+
+| 工具 | 用途 | 常用参数 |
+|------|------|---------|
+| top/htop | 实时进程监控 | top -o %CPU / -o %MEM |
+| perf | CPU 性能采样 | perf top / perf record / perf report |
+| strace | 系统调用跟踪 | strace -p PID -T -c |
+| ltrace | 库函数调用跟踪 | ltrace -p PID |
+| valgrind | 内存泄漏检测 | valgrind --leak-check=full ./a.out |
+| gdb | 调试器 | gdb -p PID / break / run / bt |
+| tcpdump | 网络抓包 | tcpdump -i eth0 -nn port 80 |
+| iostat | 磁盘 I/O 统计 | iostat -x 1 |
+| vmstat | 虚拟内存统计 | vmstat 1 |
+| sar | 系统活动报告 | sar -u -r -d 1 |
+
+## 容器技术基础（Docker）
+
+* 容器 = cgroups（资源限制）+ namespaces（隔离）+ UnionFS（镜像分层）
+* 镜像只读层通过 UnionFS（OverlayFS / AUFS）叠加
+* 容器共享宿主机内核，比虚拟机更轻量
+* 常见容器运行时：runc（默认）、containerd、CRI-O
+
+### 容器 vs 虚拟机
+
+| 维度 | 容器 | 虚拟机 |
+|------|------|--------|
+| 启动速度 | 毫秒级 | 秒到分钟级 |
+| 内核 | 共享宿主机内核 | 独立内核（Hypervisor） |
+| 资源开销 | 几乎零开销 | 每个 VM 有独立 OS |
+| 隔离性 | 进程级隔离（较弱） | 硬件级隔离（强） |
+| 镜像大小 | MB 级（alpine 约 5MB） | GB 级 |

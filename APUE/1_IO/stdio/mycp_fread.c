@@ -13,14 +13,14 @@ int main()
     FILE *fps,*fpd;
     fps = fopen("./tmp","r");
     if (fps == NULL){
-        strerror(errno);
+        fprintf(stderr,"Error: %s\n",strerror(errno));
         exit(1);
     }
 
     fpd = fopen("./copy","w");
     if (fpd == NULL){
+        fprintf(stderr,"Error: %s\n",strerror(errno));
         fclose(fps);
-        strerror(errno);
         exit(1);
     }
 

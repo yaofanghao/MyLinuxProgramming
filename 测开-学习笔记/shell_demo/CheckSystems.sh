@@ -32,7 +32,7 @@ do
              exit;;
      esac
      #
-     shift $[ $OPTIND - 1 ]
+     shift $(( $OPTIND - 1 ))
      #
      if [ $# -eq 0 ]
      then
@@ -48,7 +48,7 @@ do
           echo
           echo "Checking system at $ipaddress..."
           echo
-          $pingcommand -q -c 3 $ipaddress
+          $pingcommand -q -c 3 "$ipaddress"
           echo
      done
      exit
@@ -64,7 +64,7 @@ choice=0
 while [ $choice -eq 0 ]
 do
      read -t 60 -p "Enter name of file: " filename
-     if [ -z $filename ]
+     if [ -z "$filename" ]
      then
           quitanswer=""
           read -t 10 -n 1 -p "Quit script [Y/n]? " quitanswer
@@ -85,25 +85,25 @@ do
      fi
 done
 #
-if [ -s $filename ] && [ -r $filename ]
+if [ -s "$filename" ] && [ -r "$filename" ]
      then
           echo "$filename is a file, is readable, and is not empty."
           echo
-          cat $filename | while read line
+          while read line
           do
                ipaddress=$line
                read line
                iptype=$line
-               if [ $iptype = "IPv4" ]
+               if [ "$iptype" = "IPv4" ]
                then
                     pingcommand=$(which ping)
                else
                     pingcommand=$(which ping6)
                fi
                echo "Checking system at $ipaddress..."
-               $pingcommand -q -c 3 $ipaddress
+               $pingcommand -q -c 3 "$ipaddress"
                echo
-          done
+          done < "$filename"
           echo "Finished processing the file. All systems checked."
      else
           echo

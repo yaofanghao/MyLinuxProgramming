@@ -1,8 +1,8 @@
+#!/bin/bash
 # 确定当前系统中可用的包管理器。
 # 同时还以已安装的软件包管理器为指导，
 # 猜测当前系统是基于哪个Linux发行版。
-
-#!/bin/bash
+#
 # Checks system for popular package managers
 #
 #################### User Introduction ######################
@@ -55,7 +55,7 @@ else
 #
 fi
 ####
-redhatscore=$[$item_rpm + $item_dnfyum + $item_flatpak]
+redhatscore=$(($item_rpm + $item_dnfyum + $item_flatpak))
 #
 ##################### Debian Checks #######################
 #
@@ -98,7 +98,7 @@ else
 fi
 ####
 #
-debianscore=$[$item_dpkg + $item_aptaptget + $item_snap]
+debianscore=$(($item_dpkg + $item_aptaptget + $item_snap))
 #
 #
 ##################### Determine Distro #######################

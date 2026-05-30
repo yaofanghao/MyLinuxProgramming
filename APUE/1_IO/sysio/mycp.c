@@ -10,20 +10,20 @@
 int main(int argc,char** argv)
 {
     if (argc < 3){
-        fprintf(stdout,"Usage...");
+        fprintf(stderr,"Usage...");
         exit(1);
     }
 
     int sfd = open(argv[1],O_RDONLY);
     if (sfd < 0){
-        strerror(errno);
+        fprintf(stderr,"Error: %s\n",strerror(errno));
         exit(1);
     }
 
     int dfd = open(argv[2],O_WRONLY|O_CREAT|O_TRUNC,0600);
     if(dfd < 0){
+        fprintf(stderr,"Error: %s\n",strerror(errno));
         close(sfd);
-        strerror(errno);
         exit(1);
     }
 
@@ -37,7 +37,7 @@ int main(int argc,char** argv)
         int pos = 0;//写截至的位置
         len = read(sfd,buf,SIZE);
         if (len < 0){
-            strerror(errno);
+            fprintf(stderr,"Error: %s\n",strerror(errno));
             break;
         }
         if (len == 0){

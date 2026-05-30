@@ -19,11 +19,11 @@ int main()
 #endif
 
     FILE *fp;
-    fp = fopen("log","r");
+    fp = fopen("log","w");
     if (fp == NULL){
-        fprintf(stderr,"fopen() faild! errno = %d\n",errno);//errno已经被私有化
+        fprintf(stderr,"fopen() failed! errno = %d\n",errno);
         perror("fopen");
-        printf("%s\n",strerror(errno));
+        fprintf(stderr,"%s\n",strerror(errno));
         exit(1);
     }else{
         fputs("ok!\n",stdout);
